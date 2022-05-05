@@ -13,6 +13,7 @@ public class Grupo implements What7Interface{
     public Grupo(Pessoa administrador, String nome_do_grupo) {
         this.nome_do_grupo = nome_do_grupo;
         this.participantes = new ArrayList<>();
+        this.participantes.add(administrador);
         this.administradores = new ArrayList<>();
         this.administradores.add(administrador);
         this.mensagens = new ArrayList<>();
@@ -59,4 +60,25 @@ public class Grupo implements What7Interface{
     public void incluirNovoMembro(Pessoa pessoa) {
         this.participantes.add(pessoa);
     }
+    public void adicionaADM(Pessoa pessoa) { this.administradores.add(pessoa); }
+    public void removerMembro(Pessoa pessoa) {
+        this.participantes.remove(pessoa);
+        this.administradores.remove(pessoa);
+    }
+    public void promoverADM(Pessoa pessoa) { this.administradores.add(pessoa); }
+    public int quantidadeDeMembros() { return this.participantes.size(); }
+    public int quantidadeDeAdministradores() { return this.administradores.size(); }
+    public String listarPessoas(String tipo) {
+        List<Pessoa> listaPessoas = new ArrayList<>();
+        StringBuilder lista = new StringBuilder();
+
+        if (tipo.equals("Administradores")) listaPessoas = this.administradores;
+        else if (tipo.equals("Participantes")) listaPessoas = this.participantes;
+
+        for (Pessoa adm : listaPessoas) {
+            lista.append(adm.toString()).append('\n');
+        }
+        return lista.toString();
+    }
+
 }
