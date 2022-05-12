@@ -3,7 +3,6 @@ package main.Java;
 import java.time.LocalDateTime;
 
 public class Mensagem {
-
     public enum tipo {
         TEXTO,
         IMAGEM,
@@ -15,7 +14,6 @@ public class Mensagem {
     public String conteudo;
     public LocalDateTime data_de_criacao;
     public String remetente;
-
     public Mensagem(String remetente, tipo tipo_da_mensagem, String conteudo, LocalDateTime data_de_criacao) {
         this.remetente = remetente;
         this.tipo_da_mensagem = tipo_da_mensagem;

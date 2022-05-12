@@ -20,7 +20,6 @@ public class Conversa implements What7Interface{
         this.mensagens = new ArrayList<>();
         this.ultima_atualizacao = LocalDateTime.now();
     }
-
     @Override
     public boolean equals(Object o) {
 
@@ -32,20 +31,16 @@ public class Conversa implements What7Interface{
         return Objects.equals(destinatario, conversa.getDestinatario()) &&
                 Objects.equals(remetente, conversa.getRemetente());
     }
-
     @Override
     public int hashCode() {
         return Objects.hash(remetente, destinatario);
     }
-
     public String getDestinatario() {
         return destinatario;
     }
-
     public String getRemetente() {
         return remetente;
     }
-
     public String listarMensagens() {
         StringBuilder lista_de_mensagens = new StringBuilder();
         for (Mensagem mensagem : this.mensagens) {
@@ -53,15 +48,12 @@ public class Conversa implements What7Interface{
         }
         return lista_de_mensagens.toString();
     }
-
     public void novaMensagem(Mensagem mensagem) {
         this.mensagens.add(mensagem);
     }
-
     public LocalDateTime getUltima_atualizacao() {
         return ultima_atualizacao;
     }
-
     public void setUltima_atualizacao(LocalDateTime ultima_atualizacao) {
         int ultimo_indice = this.mensagens.size()-1;
         this.ultima_atualizacao = this.mensagens.get(ultimo_indice).data_de_criacao;
