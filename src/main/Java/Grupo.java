@@ -9,93 +9,98 @@ import java.util.List;
 import java.util.Objects;
 
 public class Grupo implements What7Interface{
-    public String nome_do_grupo;
+    public String nomeDoGrupo;
 
-    public Grupo(Pessoa administrador, String nome_do_grupo) {
-        this.nome_do_grupo = nome_do_grupo;
-        this.participantes = new ArrayList<>();
-        this.participantes.add(administrador);
-        this.administradores = new ArrayList<>();
-        this.administradores.add(administrador);
-        this.mensagens = new ArrayList<>();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-
-        if (o == this) return true;
-        if (!(o instanceof Grupo)) {
-            return false;
-        }
-        Grupo grupo = (Grupo) o;
-        return Objects.equals(nome_do_grupo, grupo.getNomeDoGrupo());
-    }
-    @Override
-    public int hashCode() {
-        return Objects.hash(nome_do_grupo);
-    }
-    public List<Pessoa> getParticipantes() {
-        return participantes;
-    }
-    public List<Pessoa> getAdministradores() {
-        return administradores;
-    }
-    public String listarMensagens() {
-        StringBuilder lista_de_mensagens = new StringBuilder();
-        for (Mensagem mensagem : this.mensagens) {
-            lista_de_mensagens.append(mensagem.toString()).append('\n');
-        }
-        return lista_de_mensagens.toString();
-    }
-    public String getNomeDoGrupo() { return this.nome_do_grupo; }
-    public void novaMensagem(Mensagem nova_mensagem) {
-        this.mensagens.add(nova_mensagem);
-    }
-    public void incluirNovoMembro(Pessoa pessoa) {
-        this.participantes.add(pessoa);
-    }
-    public void adicionaADM(Pessoa pessoa) { this.administradores.add(pessoa); }
-    public void removerMembro(Pessoa pessoa) {
-        this.participantes.remove(pessoa);
-        this.administradores.remove(pessoa);
-    }
-    public void promoverADM(Pessoa pessoa) { this.administradores.add(pessoa); }
-    public int quantidadeDeMembros() { return this.participantes.size(); }
-    public int quantidadeDeAdministradores() { return this.administradores.size(); }
-    public String listarPessoas(String tipo) {
-        List<Pessoa> listaPessoas = new ArrayList<>();
-        StringBuilder lista = new StringBuilder();
-
-        if (tipo.equals("Administradores")) listaPessoas = this.administradores;
-        else if (tipo.equals("Participantes")) listaPessoas = this.participantes;
-
-        for (Pessoa adm : listaPessoas) {
-            lista.append(adm.toString()).append('\n');
-        }
-        return lista.toString();
-    }
-    public void sairDoGrupo(Pessoa p) throws What7Exceptions{
-        this.participantes.remove(p);
-        this.administradores.remove(p);
-
-        if(this.administradores.size() == 0){
-            if(this.participantes.size() == 0){
-//                excluir o banco
-                throw new What7Exceptions("O grupo nao possui mais membros e nem participantes, entao ele foi excluido!");
-            } else {
-                this.administradores.add(this.participantes.get(0));
-//                throw new What7Exceptions("O grupo nao possui mais administradores, entao o primeiro membro a ser adicionado ao grupo se tornou administrador!");
-            }
-        }
-    }
-    public boolean ehAdministrador(String nome_do_grupo, String nome, String telefone) throws SQLException {
+    public Grupo(String nomeDoGrupo, String nomeAdm, String telefoneAdm) throws SQLException {
+        this.nomeDoGrupo = nomeDoGrupo;
         PostgreSQLJDBC app = new PostgreSQLJDBC();
         Connection conn = app.connect();
         Statement st = conn.createStatement();
 
-        ResultSet rs = st.executeQuery("SELECT * FROM grupo_adms WHERE grupo = " + this.nome_do_grupo + "adm_nome = '" + nome +
-                                                                    "' AND adm_telefone = '" + telefone + "';");
+        try {
+            st.executeUpdate("INSERT INTO grupo (nomeDoGrupo) values ('"+ this.nomeDoGrupo + "');");
+            st.executeUpdate("INSERT INTO grupo_participantes (grupo, participante_nome, participante_telefone)" +
+                    "VALUES ('"+ this.nomeDoGrupo + "', '" + nomeAdm + "', '" + telefoneAdm + "');");
+            st.executeUpdate("INSERT INTO grupo_adms (grupo, adm_nome, adm_telefone)" +
+                    "VALUES ('"+ this.nomeDoGrupo + "', '" + nomeAdm + "', '" + telefoneAdm + "');");
 
-        return rs.next();
+        } catch (Exception e) {
+            throw e;
+        }
     }
+
+    public Grupo(String nomeDoGrupo){
+        this.nomeDoGrupo = nomeDoGrupo;
+    }
+    @Override
+    public String listarMensagens() throws SQLException {
+        StringBuilder novaString = new StringBuilder();
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT * FROM mensagens_grupo mg JOIN mensagens m ON mg.mensagem = m.id " +
+                "WHERE grupo = '" + this.nomeDoGrupo + "';");
+
+        novaString.append("Grupo: ").append(this.nomeDoGrupo).append("\n");
+        novaString.append("Remetente:\tTelefone:\n");
+        while (rs.next()) {
+            novaString.append(rs.getString(5)).append('\t').append(rs.getString(6));
+        }
+
+        return novaString.toString();
+    }
+    public void incluirNovoMembro(String nomeMembro, String telefoneMembro) throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("INSERT INTO grupo_participantes(grupo, participante_nome, participante_telefone)" +
+                "VALUES ('" + this.nomeDoGrupo + "', '" + nomeMembro + "', '" + telefoneMembro + "');");
+    }
+    public void adicionaADM(String nomeMembro, String telefoneMembro) throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("INSERT INTO grupo_adms(grupo, adm_nome, adm_telefone)" +
+                "VALUES ('" + this.nomeDoGrupo + "', '" + nomeMembro + "', '" + telefoneMembro + "');");
+    }
+    public void removerMembro(String nomeMembro, String telefoneMembro) throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("DELETE FROM grupo_participantes WHERE grupo = '" + this.nomeDoGrupo +
+                " 'AND participante_nome = '" + nomeMembro + "'AND participante_telefone = '" + telefoneMembro + "';");
+    }
+    public int quantidadeDeMembros() throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT coutn(*) FROM grupo_participantes gp WHERE grupo = '" + this.nomeDoGrupo + "';");
+        rs.next();
+        return rs.getInt("count(*)");
+    }
+    public int quantidadeDeAdministradores() throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT coutn(*) FROM grupo_adms gp WHERE grupo = '" + this.nomeDoGrupo + "';");
+        rs.next();
+        return rs.getInt("count(*)");
+    }
+    public String listarMembros(String tipo) throws SQLException {
+        StringBuilder novaString = new StringBuilder();
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT * FROM mensages m JOIN mensagens_grupo mg ON m.id = mp.mensagem" +
+                "WHERE grupo = '" + this.nomeDoGrupo + "';");
+
+        novaString.append("Grupo: ").append(this.nomeDoGrupo).append("\nMembros: \n");
+        novaString.append("Nome:\tTelefone:\n");
+        while (rs.next()) {
+            novaString.append(rs.getString(3)).append(rs.getString(4));
+        }
+
+        return novaString.toString();
+    }
+
 }

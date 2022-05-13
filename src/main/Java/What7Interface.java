@@ -1,6 +1,7 @@
 package main.Java;
 
+import java.sql.SQLException;
+
 interface What7Interface {
-    public void novaMensagem(Mensagem nova_mensagem);
-    public String listarMensagens();
+    public String listarMensagens() throws SQLException;
 }

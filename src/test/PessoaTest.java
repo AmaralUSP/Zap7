@@ -2,6 +2,7 @@ package test;
 
 import org.junit.Before;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,31 +21,34 @@ public class PessoaTest {
 
     @Test
     public void deveAdicionarContatoComSucesso() throws SQLException, What7Exceptions {
-        Pessoa novaPessoa = new Pessoa("teste", "23456789456123");
-        novaPessoa.adicionaContato("Feliz", "11953958755");
-
+        try {
+            Pessoa novaPessoa = new Pessoa("teste", "23456789456123");
+            novaPessoa.adicionaContato("Feliz", "11953958755");
+        } catch (Exception e){
+            System.out.print(e);
+        }
     }
     @Test
     public void erroAoAdicionarContatoUsuarioInexistente() throws SQLException {
-        PostgreSQLJDBC app = new PostgreSQLJDBC();
-        Connection conn = app.connect();
-        Statement st = conn.createStatement();
-        st.executeUpdate("INSERT INTO contatos (remetente_nome, remetente_telefone, destinatario_nome, destinatario_telefone)" +
-                    "values ('Jon Doe', '4098234908239', 'Feliz', '11953958755');");
-        ResultSet rs = st.executeQuery("SELECT * FROM contatos WHERE remetente_nome = 'Jon Doe' AND remetente_telefone = '4098234908239' AND " +
-                    "destinatario_nome = 'Feliz' AND destinatario_telefone = '11953958755';");
-        assertFalse(rs.next());
-
+        assertThrows(SQLException.class,
+                ()->{
+                    PostgreSQLJDBC app = new PostgreSQLJDBC();
+                    Connection conn = app.connect();
+                    Statement st = conn.createStatement();
+                    ResultSet rs = st.executeQuery("SELECT * FROM contatos WHERE remetente_nome = 'Jon Doe' AND remetente_telefone = '4098234908239' AND " +
+                            "destinatario_nome = 'Feliz' AND destinatario_telefone = '11953958755';");
+                });
     }
-//    }
-//    @Test
-//    public void enviaMensagemComSucesso(){
-//        try{
-//            pessoaTest1.enviarMensagemChat("11953958755", nova_mensagem);
-//        } catch (Exception e){
-//            System.out.print(e);
-//        }
-//    }
+
+    @Test
+    public void enviaMensagemComSucesso(){
+        try {
+            Pessoa novaPessoa = new Pessoa("teste", "23456789456123");
+            novaPessoa.enviarMensagemChat(novaPessoa.getNome(), novaPessoa.getTelefone(), "Uma mensagem de teste", 1);
+        } catch (Exception e){
+            System.out.print(e);
+        }
+    }
 //
 //    @Test
 //    public void criaGrupoComSucesso() {

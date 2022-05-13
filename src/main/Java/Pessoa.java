@@ -24,30 +24,12 @@ public class Pessoa {
             throw e;
         }
     }
-
-//    @Override
-//    public boolean equals(Object o) {
-//
-//        if (o == this) return true;
-//        if (!(o instanceof Pessoa)) {
-//            return false;
-//        }
-//        Pessoa pessoa = (Pessoa) o;
-//        return Objects.equals(nome, pessoa.getNome()) &&
-//                Objects.equals(telefone, pessoa.getTelefone());
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        return Objects.hash(nome, telefone);
-//    }
-//
-//    @Override
-//    public String toString() {
-//        StringBuilder imprimir = new StringBuilder();
-//
-//        return imprimir.append("Nome: ").append(this.nome).append(" Telefone: ").append(this.telefone).toString();
-//    }
+    public String getNome() {
+        return this.nome;
+    }
+    public String getTelefone() {
+        return this.telefone;
+    }
 
     public void adicionaContato(String nome, String telefone) throws What7Exceptions, SQLException {
         PostgreSQLJDBC app = new PostgreSQLJDBC();
@@ -67,6 +49,8 @@ public class Pessoa {
         if (!rs.next()) {
             st.executeUpdate("INSERT INTO contatos (remetente_nome, remetente_telefone, destinatario_nome, destinatario_telefone)" +
                     "values ('" + nome + "', '" + telefone + "', '" + this.nome + "', '" + this.telefone + "');");
+        } else{
+            throw new What7Exceptions("Usuario ja inserido ja base!");
         }
     }
 
@@ -107,129 +91,101 @@ public class Pessoa {
         Connection conn = app.connect();
         Statement st = conn.createStatement();
         ResultSet rs = st.executeQuery("SELECT * FROM mensages m JOIN mensagens_pessoa mp ON m.id = mp.mensagem" +
-                        "WHERE remetente_nome = " + this.nome + " AND remetente_telefone = " + this.telefone ";");
+                        "WHERE remetente_nome = '" + this.nome + "' AND remetente_telefone = '" + this.telefone + "';");
 
         novaString.append("Remetente: ").append(this.nome).append("\nDestinatarios: \n");
         novaString.append("Nome:\tTelefone:\n");
         while (rs.next()) {
-            novaString.append(rs.getString(1)).append(rs.getString(2));
+            novaString.append(rs.getString(3)).append(rs.getString(4));
         }
 
         return novaString.toString();
     }
 
     public void criaGrupo(String grupo) throws What7Exceptions, SQLException {
+        Grupo novoGrupo = new Grupo(grupo, this.nome, this.telefone);
+
+    }
+
+    private boolean ehAdministrador(String grupo) throws SQLException {
         PostgreSQLJDBC app = new PostgreSQLJDBC();
         Connection conn = app.connect();
         Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT * FROM grupo_adms WHERE grupo = '" + grupo + " ', adm_nome = '" + this.nome +
+                "', adm_telefone = '" + this.telefone + "';");
+
+        return rs.next();
+    }
+    private boolean pertenceAoGrupo(String grupo) throws SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT * FROM grupo_participantes WHERE grupo = '" + grupo +
+                " ', participante_nome = '" + this.nome + "', participante_telefone = '" + this.telefone + "';");
+
+        return rs.next();
+    }
+
+    public void removerMembroDoGrupo(String nomeMembro, String telefoneMembro, String grupo) throws What7Exceptions, SQLException {
+        if(this.ehAdministrador(grupo)){
+            Grupo novoGrupo = new Grupo(grupo);
+            novoGrupo.removerMembro(nomeMembro, telefoneMembro);
+        }
+    }
+
+    public void adicionarMembroAoGrupo(String nomeMembro, String telefoneMembro, String telefone, String grupo) throws What7Exceptions, SQLException {
+        if(this.ehAdministrador(grupo)){
+            Grupo novoGrupo = new Grupo(grupo);
+            novoGrupo.incluirNovoMembro(nomeMembro, telefoneMembro);
+        }
+    }
+
+    public void promoveADMdoGrupo(String nomeMembro, String telefoneMembro, String telefone, String grupo) throws What7Exceptions, SQLException {
+        if(this.ehAdministrador(grupo)){
+            Grupo novoGrupo = new Grupo(grupo);
+            novoGrupo.incluirNovoMembro(nomeMembro, telefoneMembro);
+        }
+    }
+
+    public void sairDoGrupo(String grupo) throws What7Exceptions, SQLException {
+        Grupo novoGrupo = new Grupo(grupo);
+        novoGrupo.removerMembro(this.nome, this.telefone);
+    }
+
+    public void enviarMensagemGrupo(String nomeDoGrupo, String conteudo, int tipo) throws What7Exceptions, SQLException {
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet keys;
+
+        if (!this.pertenceAoGrupo(nomeDoGrupo)) throw new What7Exceptions("O usuario nao pertence ao grupo!\n");
 
         try {
-            st.executeUpdate("INSERT INTO grupo (nome_do_grupo) values ('"+ grupo + "');");
-            st.executeUpdate("INSERT INTO grupo_participantes (grupo, participante_nome, participante_telefone)" +
-                    "VALUES ('"+ grupo + "', '" + this.nome + "', '" + this.telefone + "');");
-            st.executeUpdate("INSERT INTO grupo_adms (grupo, adm_nome, adm_telefone)" +
-                    "VALUES ('"+ grupo + "', '" + this.nome + "', '" + this.telefone + "');");
-
+            st.executeUpdate("INSERT INTO mensagens (conteudo, tipo_mensagem, remetente_nome, remetente_telefone) " +
+                    "values ('" + conteudo + "', " + tipo + ", '" + this.nome + "', '" + this.telefone + "');");
+            keys = st.getGeneratedKeys();
+            st.executeUpdate("INSERT INTO  mensagens_grupo (grupo, mensagem) " +
+                    "values ('" + nomeDoGrupo + "', " + keys.getInt("id") + ");");
         } catch (Exception e) {
             throw e;
         }
     }
 
-    private boolean ehAdministrador(String grupo) {
-        Grupo novoGrupo = new Grupo();
-        return novoGrupo.ehAdministrador(grupo, this.nome, this.telefone);
+    public String listarGrupos() throws SQLException {
+        StringBuilder novaString = new StringBuilder();
+        PostgreSQLJDBC app = new PostgreSQLJDBC();
+        Connection conn = app.connect();
+        Statement st = conn.createStatement();
+        ResultSet rs = st.executeQuery("SELECT * FROM grupo_participantes gp WHERE participante_nome = '" + this.nome + "' AND participante_telefone = '" + this.telefone + "';");
+
+        novaString.append("Membro: ").append(this.nome).append("\n");
+        novaString.append("Nome do grupo:\n");
+        while (rs.next()) {
+            novaString.append(rs.getString(1)).append('\n');
+        }
+
+        return novaString.toString();
     }
-//
-//    private boolean pertenceAoGrupo(Grupo grupo) {
-//        return this.grupos.contains(grupo);
-//    }
-//
-//    public String listarPessoasDoGrupo(String nomeDoGrupo, String tipo) throws What7Exceptions {
-//        Grupo novo_grupo = grupos_da_plataforma.get(nomeDoGrupo);
-//        if (novo_grupo == null)
-//            throw new What7Exceptions("O grupo nao existe!");
-//        if (!this.pertenceAoGrupo(novo_grupo))
-//            throw new What7Exceptions("O usuario nao pertence ao grupo!");
-//        if (tipo.equals("Participantes")) return novo_grupo.listarPessoas(tipo);
-//        else if (tipo.equals("Administradores")) return novo_grupo.listarPessoas(tipo);
-//        else return "";
-//    }
-//
-//    public void removerMembroDoGrupo(String telefone, String grupo) throws What7Exceptions {
-//        Grupo novo_grupo = grupos_da_plataforma.get(grupo);
-//        Pessoa pessoa = usuarios_da_plataforma.get(telefone);
-//        if (novo_grupo == null)
-//            throw new What7Exceptions("O grupo nao existe!");
-//        if (pessoa == null)
-//            throw new What7Exceptions("O usuario nao existe!");
-//        if (!(this.ehAdministrador(novo_grupo) || this.pertenceAoGrupo(novo_grupo)))
-//            throw new What7Exceptions("O usuario nao possui permissao suficiente!");
-//        novo_grupo.removerMembro(pessoa);
-//        pessoa.grupos.remove(novo_grupo);
-//    }
-//
-//    public void adicionarMembroAoGrupo(String telefone, String grupo) throws What7Exceptions {
-//        Grupo novo_grupo = grupos_da_plataforma.get(grupo);
-//        Pessoa pessoa = usuarios_da_plataforma.get(telefone);
-//        if (novo_grupo == null)
-//            throw new What7Exceptions("O grupo nao existe!");
-//        if (pessoa == null)
-//            throw new What7Exceptions("O usuario nao existe!");
-//        if (pessoa.pertenceAoGrupo(novo_grupo))
-//            throw new What7Exceptions("O usuario ja pertence ao grupo!");
-//        if (!(this.ehAdministrador(novo_grupo) || this.pertenceAoGrupo(novo_grupo)))
-//            throw new What7Exceptions("O usuario nao possui permissao suficiente!");
-//        novo_grupo.incluirNovoMembro(pessoa);
-//        pessoa.grupos.add(novo_grupo);
-//    }
-//
-//    public void promoveADMdoGrupo(String telefone, String grupo) throws What7Exceptions {
-//        Grupo novo_grupo = grupos_da_plataforma.get(grupo);
-//        Pessoa pessoa = usuarios_da_plataforma.get(telefone);
-//        if (novo_grupo == null)
-//            throw new What7Exceptions("O grupo nao existe!");
-//        if (pessoa == null)
-//            throw new What7Exceptions("O usuario nao existe!");
-//        if (!(this.ehAdministrador(novo_grupo) || this.pertenceAoGrupo(novo_grupo)))
-//            throw new What7Exceptions("O usuario nao possui permissao suficiente!");
-//        if (!pessoa.pertenceAoGrupo(novo_grupo)) {
-//            novo_grupo.incluirNovoMembro(pessoa);
-//            pessoa.grupos.add(novo_grupo);
-//        }
-//        novo_grupo.adicionaADM(pessoa);
-//    }
-//
-//    public void sairDoGrupo(String grupo) throws What7Exceptions {
-//        Grupo sairDoGrupo = grupos_da_plataforma.get(grupo);
-//        if (sairDoGrupo == null)
-//            throw new What7Exceptions("O grupo nao existe!");
-//        if (!this.pertenceAoGrupo(sairDoGrupo))
-//            throw new What7Exceptions("O usuario nao pertence ao grupo!");
-//        sairDoGrupo.sairDoGrupo(this);
-//    }
-//
-//    public void enviarMensagemGrupo(String nome_do_grupo, Mensagem nova_mensagem) throws What7Exceptions {
-//        Grupo grupo = grupos_da_plataforma.get(nome_do_grupo);
-//        if (grupo != null) {
-//            if (!pertenceAoGrupo(grupo)) {
-//                throw new What7Exceptions("O usuario nao pertence a esse grupo!");
-//            }
-//
-//            Grupo grupo_atual = this.grupos.stream()
-//                    .filter(g -> grupo.getNomeDoGrupo().equals(g.getNomeDoGrupo()))
-//                    .findAny()
-//                    .orElse(null);
-//
-//            grupo_atual.novaMensagem(nova_mensagem);
-//        } else throw new What7Exceptions("O grupo nao existe!");
-//    }
-//
-//    public String listarGrupos() {
-//        StringBuilder novaString = new StringBuilder();
-//        novaString.append("Pessoa: ").append(this.nome).append("\nGrupos: \n");
-//        for (Grupo atual : this.grupos) {
-//            novaString.append(atual.nome_do_grupo).append('\n');
-//        }
-//        return novaString.toString();
-//    }
+
+
 }
