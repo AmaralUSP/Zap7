@@ -18,7 +18,7 @@ public class Grupo implements What7Interface{
         Statement st = conn.createStatement();
 
         try {
-            st.executeUpdate("INSERT INTO grupo (nomeDoGrupo) values ('"+ this.nomeDoGrupo + "');");
+            st.executeUpdate("INSERT INTO grupo (nome_do_grupo) values ('"+ this.nomeDoGrupo + "');");
             st.executeUpdate("INSERT INTO grupo_participantes (grupo, participante_nome, participante_telefone)" +
                     "VALUES ('"+ this.nomeDoGrupo + "', '" + nomeAdm + "', '" + telefoneAdm + "');");
             st.executeUpdate("INSERT INTO grupo_adms (grupo, adm_nome, adm_telefone)" +
@@ -60,15 +60,15 @@ public class Grupo implements What7Interface{
         PostgreSQLJDBC app = new PostgreSQLJDBC();
         Connection conn = app.connect();
         Statement st = conn.createStatement();
-        ResultSet rs = st.executeQuery("INSERT INTO grupo_adms(grupo, adm_nome, adm_telefone)" +
+        boolean rs = st.execute("INSERT INTO grupo_adms(grupo, adm_nome, adm_telefone)" +
                 "VALUES ('" + this.nomeDoGrupo + "', '" + nomeMembro + "', '" + telefoneMembro + "');");
     }
     public void removerMembro(String nomeMembro, String telefoneMembro) throws SQLException {
         PostgreSQLJDBC app = new PostgreSQLJDBC();
         Connection conn = app.connect();
         Statement st = conn.createStatement();
-        ResultSet rs = st.executeQuery("DELETE FROM grupo_participantes WHERE grupo = '" + this.nomeDoGrupo +
-                " 'AND participante_nome = '" + nomeMembro + "'AND participante_telefone = '" + telefoneMembro + "';");
+        boolean rs = st.execute("DELETE FROM grupo_participantes WHERE grupo = '" + this.nomeDoGrupo +
+                "' AND participante_nome = '" + nomeMembro + "' AND participante_telefone = '" + telefoneMembro + "';");
     }
     public int quantidadeDeMembros() throws SQLException {
         PostgreSQLJDBC app = new PostgreSQLJDBC();

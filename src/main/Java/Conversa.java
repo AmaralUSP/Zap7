@@ -54,8 +54,5 @@ public class Conversa implements What7Interface{
     public LocalDateTime getUltima_atualizacao() {
         return ultima_atualizacao;
     }
-    public void setUltima_atualizacao(LocalDateTime ultima_atualizacao) {
-        int ultimo_indice = this.mensagens.size()-1;
-        this.ultima_atualizacao = this.mensagens.get(ultimo_indice).data_de_criacao;
-    }
+
 }

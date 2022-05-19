@@ -7,21 +7,30 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 
 public class Mensagem {
-    public enum tipo {
-        TEXTO,
-        IMAGEM,
-        AUDIO,
-        VIDEO
-    }
+    private String remetenteNome;
+    private String remetenteTelefone;
+    private int tipoDaMensagem;
+    private String conteudo;
 
-    public Mensagem(String remetenteNome, String remetenteTelefone, tipo tipoDaMensagem, String conteudo, LocalDateTime data_de_criacao) throws SQLException {
+    public Mensagem(String remetenteNome, String remetenteTelefone, int tipoDaMensagem, String conteudo) {
+        this.remetenteNome = remetenteNome;
+        this.remetenteTelefone = remetenteTelefone;
+        this.tipoDaMensagem = tipoDaMensagem;
+        this.conteudo = conteudo;
+    }
+    public Statement inserirMensagem() throws SQLException {
         PostgreSQLJDBC app = new PostgreSQLJDBC();
         Connection conn = app.connect();
         Statement st = conn.createStatement();
 
         try {
-            st.executeUpdate("INSERT INTO mensagens (conteudo, tipo_mensagem, remetente_nome, remetente_telefone) " +
-                    "values ('" + conteudo + "', " + tipoDaMensagem + ", '" + remetenteNome + "', '" + remetenteTelefone + "');");
+            st.execute("INSERT INTO mensagens (conteudo, tipo_mensagem, remetente_nome, remetente_telefone) " +
+                    "values ('" + this.conteudo + "', " + this.tipoDaMensagem + ", '" + this.remetenteNome + "', '" + this.remetenteTelefone + "') RETURNING id;", Statement.RETURN_GENERATED_KEYS);
+        } catch (Exception e){
+            throw e;
+        }
+
+        return st;
     }
 
 //    @Override
